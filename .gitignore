@@ -1,0 +1,53 @@
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+*.spec.bak
+
+# ── Virtual environment ───────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+
+# ── PyInstaller build output ──────────────────────────────────────────────────
+dist/
+build/
+
+# ── Environment & secrets ─────────────────────────────────────────────────────
+.env
+*.env
+!backend/.env.example
+
+# ── Workspaces (user data — not part of the source repo) ─────────────────────
+workspace/
+
+# ── OS files ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE / editor ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Test / coverage artefacts ────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# ── Node (if frontend tooling is ever added) ──────────────────────────────────
+node_modules/
+npm-debug.log*
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+Memory/
+Requirements/

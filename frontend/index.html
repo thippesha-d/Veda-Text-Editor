@@ -1,0 +1,322 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veda — Scientific Article Editor</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/editor.css">
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <!-- Cropper.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "@tiptap/core":                   "https://esm.sh/@tiptap/core@2.2.4",
+            "@tiptap/starter-kit":            "https://esm.sh/@tiptap/starter-kit@2.2.4",
+            "@tiptap/extension-image":        "https://esm.sh/@tiptap/extension-image@2.2.4",
+            "@tiptap/extension-text-style":   "https://esm.sh/@tiptap/extension-text-style@2.2.4",
+            "@tiptap/extension-color":        "https://esm.sh/@tiptap/extension-color@2.2.4",
+            "@tiptap/extension-font-family":  "https://esm.sh/@tiptap/extension-font-family@2.2.4",
+            "@tiptap/extension-text-align":   "https://esm.sh/@tiptap/extension-text-align@2.2.4",
+            "@tiptap/extension-underline":    "https://esm.sh/@tiptap/extension-underline@2.2.4",
+            "@tiptap/extension-table":        "https://esm.sh/@tiptap/extension-table@2.2.4",
+            "@tiptap/extension-table-row":    "https://esm.sh/@tiptap/extension-table-row@2.2.4",
+            "@tiptap/extension-table-cell":   "https://esm.sh/@tiptap/extension-table-cell@2.2.4",
+            "@tiptap/extension-table-header": "https://esm.sh/@tiptap/extension-table-header@2.2.4"
+        }
+    }
+    </script>
+</head>
+<body>
+<div class="app-container">
+
+    <!-- ════════════════════════════════════════════════════════════════
+         ZONE 1 — APP BAR  (workspace, file ops, view)
+         ════════════════════════════════════════════════════════════════ -->
+    <div class="app-bar" id="workspace-bar">
+
+        <!-- Left: workspace identity -->
+        <div class="app-bar-group">
+            <span class="app-logo">Veda</span>
+            <div class="app-bar-sep"></div>
+            <input type="text" id="workspace-name-input"
+                   class="ws-name-input" placeholder="Workspace name…"/>
+            <button id="btn-create-workspace" class="btn-primary">New</button>
+            <button id="btn-open-workspace"   class="btn-primary">Open</button>
+            <button id="btn-clone-workspace"  class="btn-primary" title="Clone a GitHub repository as a workspace">Clone</button>
+            <button id="btn-delete-workspace" class="btn-danger" title="Delete current workspace" disabled>🗑 Delete</button>
+            <button id="btn-set-remote"       class="btn-primary" title="Set GitHub remote URL for this workspace" style="display:none;">⎆ Remote</button>
+            <span   id="workspace-status"     class="ws-status">No workspace</span>
+            <span   id="lfs-badge"            class="lfs-badge" style="display:none;"></span>
+            <button id="btn-lfs-enable"       class="btn-primary" title="Enable Git LFS for this workspace"  style="display:none;">LFS On</button>
+            <button id="btn-lfs-disable"      class="btn-danger"  title="Disable Git LFS for this workspace" style="display:none;">LFS Off</button>
+            <span   id="lifecycle-badge"      class="lifecycle-badge" style="display:none;"></span>
+        </div>
+
+        <!-- Right: file ops + view -->
+        <div class="app-bar-group app-bar-right">
+            <button id="btn-manual-save"      class="btn-icon" title="Save">💾 Save</button>
+            <button data-action="save-as"     class="btn-icon" title="Download HTML copy" id="btn-save-as-appbar">📥 Save As</button>
+            <button data-action="print"       class="btn-icon" title="Print / Export PDF"  id="btn-print-appbar">🖨 Print</button>
+            <div class="app-bar-sep"></div>
+            <button id="btn-zoom-out"  class="btn-icon zoom-btn" title="Zoom out">−</button>
+            <span   id="zoom-level"   class="zoom-label">100%</span>
+            <button id="btn-zoom-in"  class="btn-icon zoom-btn" title="Zoom in">+</button>
+            <div class="app-bar-sep"></div>
+            <button data-action="toggle-theme" id="btn-theme-toggle" class="btn-icon" title="Toggle Dark / Light Mode">🌙</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         ZONE 2 — PANELS BAR  (toggle side panels by category)
+         ════════════════════════════════════════════════════════════════ -->
+    <div class="panels-bar" id="panels-bar">
+
+        <!-- Document group -->
+        <div class="panel-group">
+            <span class="panel-group-label">Document</span>
+            <button id="btn-toggle-metadata-panel"    class="panel-btn panel-btn-doc"      title="Metadata &amp; Tags">🏷 Metadata</button>
+            <button id="btn-toggle-lifecycle-panel"   class="panel-btn panel-btn-doc"      title="Article lifecycle state">📋 Lifecycle</button>
+            <button id="btn-toggle-branch-panel"      class="panel-btn panel-btn-doc"      title="Git branches">⎇ Branches</button>
+        </div>
+
+        <div class="panels-bar-sep"></div>
+
+        <!-- References group -->
+        <div class="panel-group">
+            <span class="panel-group-label">References</span>
+            <button id="btn-toggle-doi-panel"         class="panel-btn panel-btn-ref"      title="Auto-detected DOIs">🔗 DOIs</button>
+            <button id="btn-toggle-references-panel"  class="panel-btn panel-btn-ref"      title="Manually added references">📚 Refs</button>
+            <button id="btn-toggle-cit-panel"         class="panel-btn panel-btn-ref"      title="Format citations">📖 Cite</button>
+        </div>
+
+        <div class="panels-bar-sep"></div>
+
+        <!-- Analysis group -->
+        <div class="panel-group">
+            <span class="panel-group-label">Analysis</span>
+            <button id="btn-toggle-annotations-panel" class="panel-btn panel-btn-ana"      title="Figures, tables, equations, annotations">📌 Annotations</button>
+            <button id="btn-toggle-lc-panel"          class="panel-btn panel-btn-ana"      title="Link health check">🔍 Links</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         ALERT BANNER (adverse events)
+         ════════════════════════════════════════════════════════════════ -->
+    <div id="lifecycle-alert-banner" class="alert-banner" style="display:none;"></div>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         COLLAPSIBLE PANELS  (appear below panels-bar when toggled)
+         ════════════════════════════════════════════════════════════════ -->
+
+    <!-- Metadata panel -->
+    <div id="metadata-panel" class="side-panel side-panel-doc" style="display:none;">
+        <div class="side-panel-header">🏷 Document Metadata &amp; Tags</div>
+        <div id="metadata-panel-content" class="side-panel-body">
+            <p class="panel-hint">Open a workspace to edit metadata.</p>
+        </div>
+    </div>
+
+    <!-- Lifecycle panel -->
+    <div id="lifecycle-panel" class="side-panel side-panel-doc" style="display:none;">
+        <div class="side-panel-header">📋 Article Lifecycle</div>
+        <div id="lifecycle-panel-content" class="side-panel-body">
+            <p class="panel-hint">Open a workspace to view lifecycle state.</p>
+        </div>
+    </div>
+
+    <!-- Branch panel -->
+    <div id="branch-manager-panel" class="side-panel side-panel-doc" style="display:none;">
+        <div class="side-panel-header">⎇ Branches</div>
+        <div class="side-panel-body">
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                <input type="text" id="new-branch-input" placeholder="New branch name…" class="panel-input"/>
+                <button id="btn-create-branch" class="btn-sm btn-green">+ Branch</button>
+                <span id="branch-op-status" class="panel-hint"></span>
+            </div>
+            <ul id="branch-list" style="list-style:none; margin:0; padding:0; max-height:160px; overflow-y:auto;"></ul>
+            <!-- Conflict viewer (shown after failed merge) -->
+            <div id="branch-conflicts-viewer" class="diff-viewer" style="display:none;">
+                <div class="diff-viewer-header">
+                    <span>⚠ Merge Conflicts</span>
+                    <button class="diff-close-btn" id="btn-close-conflicts">✕</button>
+                </div>
+                <div id="branch-conflicts-body" class="diff-viewer-body"></div>
+            </div>
+            <!-- Diff viewer (shown when Diff button is clicked) -->
+            <div id="branch-diff-viewer" class="diff-viewer" style="display:none;">
+                <div class="diff-viewer-header">
+                    <span id="branch-diff-title">Diff</span>
+                    <button class="diff-close-btn" id="btn-close-diff">✕</button>
+                </div>
+                <div id="branch-diff-body" class="diff-viewer-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOI panel -->
+    <div id="doi-panel" class="side-panel side-panel-ref" style="display:none;">
+        <div class="side-panel-header">🔗 Detected DOIs</div>
+        <div id="doi-panel-content" class="side-panel-body">
+            <p class="doi-empty">No DOIs detected in document.</p>
+        </div>
+    </div>
+
+    <!-- Manual References panel -->
+    <div id="references-panel" class="side-panel side-panel-ref" style="display:none;">
+        <div class="side-panel-header">📚 Reference Manager
+            <span class="panel-hint" style="font-weight:normal; margin-left:8px;">cite with <code>[@ref_id]</code></span>
+        </div>
+        <div id="references-panel-content" class="side-panel-body">
+            <p class="panel-hint">Open a workspace to manage references.</p>
+        </div>
+    </div>
+
+    <!-- Citation formatter panel -->
+    <div id="cit-panel" class="side-panel side-panel-ref" style="display:none;">
+        <div class="side-panel-header">📖 Citation Formatter</div>
+        <div class="side-panel-body" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <label style="font-size:13px;">Style:
+                <select id="citation-style-select" class="panel-select">
+                    <option value="apa">APA (7th ed.)</option>
+                    <option value="ieee">IEEE</option>
+                    <option value="nature">Nature</option>
+                    <option value="chicago">Chicago (Author-Date)</option>
+                    <option value="vancouver">Vancouver</option>
+                    <option value="harvard">Harvard</option>
+                </select>
+            </label>
+            <button id="btn-format-citations" class="btn-sm btn-red">▶ Format</button>
+            <span class="panel-hint">Type <code>[@doi]</code> or <code>[@ref_id]</code> to cite.</span>
+        </div>
+    </div>
+
+    <!-- Annotations panel -->
+    <div id="annotations-panel" class="side-panel side-panel-ana" style="display:none;">
+        <div class="side-panel-header">📌 Annotations &amp; Elements
+            <button id="btn-refresh-annotations" class="btn-sm" style="margin-left:auto;">↻ Refresh</button>
+        </div>
+        <div id="annotations-panel-content" class="side-panel-body">
+            <p class="ann-empty">Open a workspace to scan the document.</p>
+        </div>
+    </div>
+
+    <!-- Link check panel -->
+    <div id="lc-panel" class="side-panel side-panel-ana" style="display:none;">
+        <div class="side-panel-header">🔍 Link Health Check
+            <button id="btn-run-link-check" class="btn-sm btn-green" style="margin-left:auto;">▶ Run Check</button>
+        </div>
+        <div id="lc-panel-content" class="side-panel-body">
+            <p class="lc-message">Press "Run Check" to verify all links.</p>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         ZONE 3 — FORMATTING TOOLBAR  (text editing actions only)
+         ════════════════════════════════════════════════════════════════ -->
+    <header class="toolbar" id="editor-toolbar">
+
+        <!-- Row A: edit history · character · headings · lists · blocks -->
+        <div class="toolbar-row">
+            <button data-action="undo"        title="Undo (Ctrl+Z)">↩</button>
+            <button data-action="redo"        title="Redo (Ctrl+Y)">↪</button>
+            <button data-action="copy"        title="Copy selection">⎘</button>
+            <button data-action="paste"       title="Paste">📋</button>
+            <span class="divider"></span>
+
+            <button data-action="bold"        title="Bold"><b>B</b></button>
+            <button data-action="italic"      title="Italic"><i>I</i></button>
+            <button data-action="underline"   title="Underline"><u>U</u></button>
+            <span class="divider"></span>
+
+            <button data-action="h1"          title="Heading 1">H1</button>
+            <button data-action="h2"          title="Heading 2">H2</button>
+            <button data-action="h3"          title="Heading 3">H3</button>
+            <span class="divider"></span>
+
+            <button data-action="bulletList"  title="Bullet list">• List</button>
+            <button data-action="orderedList" title="Numbered list">1. List</button>
+            <button data-action="blockquote"  title="Blockquote">"</button>
+            <span class="divider"></span>
+
+            <!-- Table -->
+            <button data-action="insertTable"    title="Insert table">⊞</button>
+            <button data-action="addRowAfter"    title="Add row">+R</button>
+            <button data-action="deleteRow"      title="Delete row">−R</button>
+            <button data-action="addColumnAfter" title="Add column">+C</button>
+            <button data-action="deleteColumn"   title="Delete column">−C</button>
+            <span class="divider"></span>
+
+            <!-- Image + annotation -->
+            <button data-action="image"          title="Insert image">🖼</button>
+            <input  type="file" id="image-upload-input"
+                    accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;">
+            <button data-action="add-annotation" title="Annotate selection">📌</button>
+
+            <span class="save-status" id="save-status">Initializing…</span>
+        </div>
+
+        <!-- Row B: typography · colour · alignment -->
+        <div class="toolbar-row">
+            <select id="font-family-select" title="Font family" style="max-width:150px;">
+                <option value="">Default Font</option>
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                <option value="'Courier New', Courier, monospace">Courier New</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="Verdana, Geneva, sans-serif">Verdana</option>
+                <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+            </select>
+            <span class="divider"></span>
+
+            <label class="color-label" title="Text colour">
+                A <input type="color" id="font-color-input" value="#000000"/>
+            </label>
+            <span class="divider"></span>
+
+            <button data-action="align-left"    title="Align left">⬅</button>
+            <button data-action="align-center"  title="Centre">↔</button>
+            <button data-action="align-right"   title="Align right">➡</button>
+            <button data-action="align-justify" title="Justify">≡</button>
+        </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         EDITOR VIEWPORT
+         ════════════════════════════════════════════════════════════════ -->
+    <main class="editor-container" id="editor-container" style="position:relative;">
+        <div id="editor-canvas"></div>
+
+        <div id="workspace-overlay" class="ws-overlay">
+            <div class="ws-overlay-card">
+                <h2>Welcome to Veda</h2>
+                <p>Enter a workspace name above and click <strong>New</strong> to begin.</p>
+            </div>
+        </div>
+
+        <div id="page-tracker" class="page-tracker">Page 1 of 1</div>
+    </main>
+</div>
+
+<!-- Cropper modal -->
+<div id="cropper-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <div class="cropper-box"><img id="cropper-image" src="" alt="Crop preview"></div>
+        <div class="modal-actions">
+            <button id="cropper-cancel"  class="btn-cancel">Cancel</button>
+            <button id="cropper-confirm" class="btn-confirm">Crop &amp; Insert</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
