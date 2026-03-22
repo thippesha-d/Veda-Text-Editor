@@ -37,8 +37,8 @@ A desktop application for writing, versioning, and managing scientific articles.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/veda.git
-cd veda
+git clone https://github.com/thippesha-d/Veda-Text-Editor.git
+cd Veda-Text-Editor
 
 # 2. Create and activate a virtual environment
 python -m venv venv
