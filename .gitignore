@@ -51,3 +51,4 @@ npm-debug.log*
 *.log
 Memory/
 Requirements/
+.claude/
